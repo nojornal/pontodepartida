@@ -132,7 +132,7 @@ const generateRandomDuration = () => {
 let episodesData = [
     {
         id: 1,
-        nome: "1. A Hegemonia em Nossos Dias",
+        nome: "1. A Hegemonia ",
         data: "12 Nov 2025",
         descricao: "Descrição do episódio sobre hegemonia nos dias atuais.",
         audio: "audios/a1.mp3",
@@ -142,9 +142,9 @@ let episodesData = [
     },
     {
         id: 2,
-        nome: "2. Gramsci para construir mudanças", 
+        nome: "2. Gramsci para co", 
         data: "5 Nov 2025",
-        descricao: "Como as ideias de Gramsci podem orientar transformações sociais.",
+        descricao: "Como as ideias",
         audio: "audios/a1.mp3",
         imageGradient: "from-pink-500 to-purple-500",
         bannerGradient: "gradient-2",
@@ -152,7 +152,7 @@ let episodesData = [
     },
     {
         id: 3,
-        nome: "3. O Conceito de Sociedade Civil",
+        nome: "3. O Conceito",
         data: "29 Out 2025",
         descricao: "Análise do conceito de sociedade civil em Gramsci.",
         audio: "audios/a1.mp3",
@@ -661,7 +661,8 @@ function initializeSearchSystem() {
                 </div>
             </div>
             <div class="flex-1">
-                <h3 class="font-semibold text-white text-sm sm:text-base truncate">${episode.nome}</h3>
+            <h3 class="font-semibold text-white text-sm sm:text-base truncate"> ${episode.nome}</h3>
+
                 <p class="text-gray-400 text-sm">${episode.descricao}</p>
                 <div class="flex items-center gap-4 mt-1">
                     <span class="text-gray-500 text-xs">${episode.data}</span>
