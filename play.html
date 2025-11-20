@@ -83,9 +83,9 @@
             transform: translateY(100%);
         }
         .progress-bar {
-            height: 6px;
+            height: 8px;
             background: #404040;
-            border-radius: 3px;
+            border-radius: 4px;
             overflow: hidden;
             cursor: pointer;
             position: relative;
@@ -93,17 +93,17 @@
         .progress {
             height: 100%;
             background: #1DB954;
-            border-radius: 3px;
+            border-radius: 4px;
             transition: width 0.1s linear;
             position: relative;
         }
         .progress-handle {
             position: absolute;
-            right: -6px;
+            right: -8px;
             top: 50%;
             transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             background: #1DB954;
             border-radius: 50%;
             opacity: 0;
@@ -162,7 +162,7 @@
         /* Estilos para dispositivos móveis */
         @media (max-width: 768px) {
             .volume-container {
-                flex-direction: column;
+                flex-direction: column-reverse;
                 align-items: center;
                 gap: 4px;
             }
@@ -176,7 +176,7 @@
                 height: 70%;
             }
             #volume-btn {
-                order: -1;
+                order: 1;
             }
         }
     </style>
@@ -328,7 +328,7 @@
       <!-- Controles de volume -->
       <div class="volume-container flex-1 justify-end">
         <button id="volume-btn" class="text-gray-400 hover:text-white transition-colors">
-          <i class="fa-solid fa-volume-high text-lg"></i>
+          <i class="fa-solid fa-volume-down text-lg"></i>
         </button>
         <div class="volume-bar" id="volume-container">
           <div class="volume-level" id="volume-level"></div>
