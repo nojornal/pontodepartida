@@ -412,7 +412,15 @@ const audioManager = (() => {
         const setVolume = (newVolume) => {
             volume = Math.max(0, Math.min(100, newVolume));
             audioElement.volume = volume / 100;
-            volumeLevel.style.width = `${volume}%`;
+            
+            // Corrigido: Agora funciona tanto para orientação horizontal quanto vertical
+            if (volumeContainer.classList.contains('vertical')) {
+                volumeLevel.style.height = `${volume}%`;
+                volumeLevel.style.width = '100%';
+            } else {
+                volumeLevel.style.width = `${volume}%`;
+                volumeLevel.style.height = '100%';
+            }
             
             if (volume === 0) {
                 isMuted = true;
@@ -428,23 +436,59 @@ const audioManager = (() => {
             if (isMuted) {
                 audioElement.volume = 0;
                 volumeBtn.querySelector('i').className = 'fa-solid fa-volume-xmark text-lg';
-                volumeLevel.style.width = '0%';
+                if (volumeContainer.classList.contains('vertical')) {
+                    volumeLevel.style.height = '0%';
+                } else {
+                    volumeLevel.style.width = '0%';
+                }
             } else {
                 audioElement.volume = volume / 100;
                 volumeBtn.querySelector('i').className = 'fa-solid fa-volume-high text-lg';
-                volumeLevel.style.width = `${volume}%`;
+                if (volumeContainer.classList.contains('vertical')) {
+                    volumeLevel.style.height = `${volume}%`;
+                } else {
+                    volumeLevel.style.width = `${volume}%`;
+                }
             }
         };
         
         const handleVolumeClick = (e) => {
             const rect = volumeContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const newVolume = (clickX / rect.width) * 100;
-            setVolume(newVolume);
+            
+            if (volumeContainer.classList.contains('vertical')) {
+                // Cálculo vertical - mobile
+                const clickY = rect.bottom - e.clientY; // Invertido porque começa de baixo para cima
+                const newVolume = (clickY / rect.height) * 100;
+                setVolume(newVolume);
+            } else {
+                // Cálculo horizontal - desktop
+                const clickX = e.clientX - rect.left;
+                const newVolume = (clickX / rect.width) * 100;
+                setVolume(newVolume);
+            }
         };
         
         volumeBtn.addEventListener('click', toggleMute);
         volumeContainer.addEventListener('click', handleVolumeClick);
+        
+        // Detectar orientação e ajustar dinamicamente
+        const updateVolumeOrientation = () => {
+            const isVertical = window.innerWidth < 768; // Mobile
+            if (isVertical) {
+                volumeContainer.classList.add('vertical');
+                volumeLevel.style.height = `${volume}%`;
+                volumeLevel.style.width = '100%';
+            } else {
+                volumeContainer.classList.remove('vertical');
+                volumeLevel.style.width = `${volume}%`;
+                volumeLevel.style.height = '100%';
+            }
+        };
+        
+        // Verificar orientação inicial e em redimensionamento
+        updateVolumeOrientation();
+        window.addEventListener('resize', updateVolumeOrientation);
+        
         setVolume(volume);
     };
     
@@ -480,10 +524,11 @@ const audioManager = (() => {
     };
     
     const updatePlayerInfo = (episodeData) => {
-    currentTrack.textContent = episodeData.nome;
-    currentPodcast.textContent = episodeData.autor || 'Podcast Gramsci';
-    currentEpisodeImage.className = `w-10 h-10 bg-gradient-to-br ${episodeData.imageGradient} rounded-full`;
-};
+        currentTrack.textContent = episodeData.nome;
+        currentPodcast.textContent = episodeData.autor || 'Podcast Gramsci';
+        currentEpisodeImage.className = `w-10 h-10 bg-gradient-to-br ${episodeData.imageGradient} rounded-full`;
+    };
+    
     const loadEpisode = (episodeData) => {
         try {
             if (isPlaying) {
@@ -662,35 +707,33 @@ function initializeSearchSystem() {
         }, 100);
     }
 
-    
-    
     function createEpisodeElement(episode) {
         const episodeDiv = document.createElement('div');
         episodeDiv.className = `episode flex items-center gap-4 p-4 rounded-lg hover:bg-gray-800 cursor-pointer transition-colors episode-transition ${episode.bannerGradient ? 'active-banner' : ''}`;
         episodeDiv.dataset.episodeId = episode.id;
         
-episodeDiv.innerHTML = `
-    <div style="position: relative;">
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${episode.gradientStart || '#3b82f6'}, ${episode.gradientEnd || '#1d4ed8'}); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-play" style="color: white;"></i>
-        </div>
-    </div>
-    <div style="flex: 1; min-width: 0;">
-        <p style="font-weight: 600; color: #ef4444; margin: 0; word-wrap: break-word; line-height: 1.4;">${episode.nome}</p>
-        <p style="color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; margin: 4px 0;">${episode.descricao}</p>
-        <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
-            <span style="color: #6b7280; font-size: 12px;">${episode.data}</span>
-            <span style="color: #6b7280; font-size: 12px;">${formatTime(episode.audioDuration || episode.defaultDuration)}</span>
-        </div>
-    </div>
-    <div style="text-align: right; min-width: 0; flex-shrink: 0;">
-        <div style="color: #10b981; font-size: 12px; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${episode.blockchainHash}">
-            ${episode.blockchainHash ? episode.blockchainHash.substring(0, 16) + '...' : 'Carregando...'}
-        </div>
-        <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">Bloco ${episode.blockIndex}</div>
-        <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">${episode.blockchainDate}</div>
-    </div>
-`;
+        episodeDiv.innerHTML = `
+            <div style="position: relative;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${episode.gradientStart || '#3b82f6'}, ${episode.gradientEnd || '#1d4ed8'}); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-play" style="color: white;"></i>
+                </div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <p style="font-weight: 600; color: #ef4444; margin: 0; word-wrap: break-word; line-height: 1.4;">${episode.nome}</p>
+                <p style="color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; margin: 4px 0;">${episode.descricao}</p>
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
+                    <span style="color: #6b7280; font-size: 12px;">${episode.data}</span>
+                    <span style="color: #6b7280; font-size: 12px;">${formatTime(episode.audioDuration || episode.defaultDuration)}</span>
+                </div>
+            </div>
+            <div style="text-align: right; min-width: 0; flex-shrink: 0;">
+                <div style="color: #10b981; font-size: 12px; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${episode.blockchainHash}">
+                    ${episode.blockchainHash ? episode.blockchainHash.substring(0, 16) + '...' : 'Carregando...'}
+                </div>
+                <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">Bloco ${episode.blockIndex}</div>
+                <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">${episode.blockchainDate}</div>
+            </div>
+        `;
         
         return episodeDiv;
     }

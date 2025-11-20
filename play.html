@@ -83,9 +83,9 @@
             transform: translateY(100%);
         }
         .progress-bar {
-            height: 8px;
+            height: 10px;
             background: #404040;
-            border-radius: 4px;
+            border-radius: 5px;
             overflow: hidden;
             cursor: pointer;
             position: relative;
@@ -93,7 +93,7 @@
         .progress {
             height: 100%;
             background: #1DB954;
-            border-radius: 4px;
+            border-radius: 5px;
             transition: width 0.1s linear;
             position: relative;
         }
@@ -167,13 +167,24 @@
                 gap: 4px;
             }
             .volume-bar {
-                width: 4px;
-                height: 80px;
+                width: 6px;
+                height: 100px;
                 margin: 8px 0;
+                background: #404040;
+                border-radius: 3px;
+                overflow: hidden;
+                cursor: pointer;
+                position: relative;
             }
             .volume-level {
                 width: 100%;
                 height: 70%;
+                background: white;
+                border-radius: 3px;
+                transition: height 0.2s ease;
+                position: absolute;
+                bottom: 0;
+                left: 0;
             }
             #volume-btn {
                 order: 1;
