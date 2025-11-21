@@ -337,14 +337,20 @@
       </div>
       
       <!-- Controles de volume -->
-      <div class="volume-container flex-1 justify-end">
-        <button id="volume-btn" class="text-gray-400 hover:text-white transition-colors">
-          <i class="fa-solid fa-volume-down text-lg"></i>
-        </button>
-        <div class="volume-bar" id="volume-container">
-          <div class="volume-level" id="volume-level"></div>
-        </div>
-      </div>
+<!-- Controles de volume -->
+<div class="volume-container group flex items-center justify-end flex-1">
+  <button id="volume-btn" class="text-gray-700 hover:text-white transition-colors group">
+    <i class="fa-solid fa-volume-down text-lg"></i>
+  </button>
+  
+  <!-- 
+  <div class="volume-level h-full bg-red-400 rounded-full w-1/3" id="volume-level" style="width: 70%; height: 100%;"></div>
+  
+  Barra de volume - invisível por padrão, visível no hover -->
+ <div class="volume-bar opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out w-0 group-hover:w-20 sm:group-hover:w-10 ml-2 h-1 sm:h-0.5 bg-gray-600 rounded-full cursor-pointer" id="volume-container">
+    <div class="volume-level h-full bg-red-400 rounded-full w-1/3" id="volume-level"></div>
+</div>
+</div>
     </div>
   </div>
 </div>
@@ -420,19 +426,19 @@
 
         <h3 class="text-white text-center font-semibold mb-6 text-lg">Compartilhar</h3>
         
-        <div class="flex justify-center items-center gap-6 mb-6">
-            <button class="share-option bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="whatsapp">
-                <i class="fab fa-whatsapp text-2xl"></i>
-            </button>
-            
-            <button class="share-option bg-pink-500 hover:bg-pink-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="instagram">
-                <i class="fab fa-instagram text-2xl"></i>
-            </button>
-            
-            <button class="share-option bg-blue-500 hover:bg-blue-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="copy">
-                <i class="fas fa-link text-2xl"></i>
-            </button>
-        </div>
+<div class="flex justify-center items-center gap-6 mb-6">
+    <button class="share-option bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="whatsapp">
+        <i class="fab fa-whatsapp text-2xl"></i>
+    </button>
+    
+    <button class="share-option bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="instagram">
+        <i class="fab fa-instagram text-2xl"></i>
+    </button>
+    
+    <button class="share-option bg-blue-500 hover:bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" data-platform="copy">
+        <i class="fas fa-link text-2xl"></i>
+    </button>
+</div>
         
         <button class="w-full py-3 text-gray-400 hover:text-white transition-colors text-sm close-share-modal">
             Fechar

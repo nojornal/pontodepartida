@@ -412,8 +412,6 @@ const audioManager = (() => {
         const setVolume = (newVolume) => {
             volume = Math.max(0, Math.min(100, newVolume));
             audioElement.volume = volume / 100;
-            
-            // Corrigido: Agora funciona tanto para orientação horizontal quanto vertical
             if (volumeContainer.classList.contains('vertical')) {
                 volumeLevel.style.height = `${volume}%`;
                 volumeLevel.style.width = '100%';
@@ -456,12 +454,12 @@ const audioManager = (() => {
             const rect = volumeContainer.getBoundingClientRect();
             
             if (volumeContainer.classList.contains('vertical')) {
-                // Cálculo vertical - mobile
-                const clickY = rect.bottom - e.clientY; // Invertido porque começa de baixo para cima
+                
+                const clickY = rect.bottom - e.clientY; 
                 const newVolume = (clickY / rect.height) * 100;
                 setVolume(newVolume);
             } else {
-                // Cálculo horizontal - desktop
+                
                 const clickX = e.clientX - rect.left;
                 const newVolume = (clickX / rect.width) * 100;
                 setVolume(newVolume);
@@ -471,8 +469,7 @@ const audioManager = (() => {
         volumeBtn.addEventListener('click', toggleMute);
         volumeContainer.addEventListener('click', handleVolumeClick);
         
-        // Detectar orientação e ajustar dinamicamente
-        const updateVolumeOrientation = () => {
+         const updateVolumeOrientation = () => {
             const isVertical = window.innerWidth < 768; // Mobile
             if (isVertical) {
                 volumeContainer.classList.add('vertical');
@@ -485,8 +482,7 @@ const audioManager = (() => {
             }
         };
         
-        // Verificar orientação inicial e em redimensionamento
-        updateVolumeOrientation();
+         updateVolumeOrientation();
         window.addEventListener('resize', updateVolumeOrientation);
         
         setVolume(volume);
