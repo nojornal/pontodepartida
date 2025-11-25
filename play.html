@@ -298,8 +298,10 @@
     <!-- Informações do episódio ACIMA da barra -->
     <div class="flex items-center space-x-4 mb-3">
       <div id="current-episode-image" class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full"></div>
-      <div class="text-white flex-1">
-        <div id="current-track" class="font-semibold text-sm">Nenhum episódio selecionado</div>
+      <div class="text-white flex-1 min-w-0">
+        <div class="relative overflow-hidden" style="height: 20px;">
+          <div id="current-track" class="font-semibold text-sm whitespace-nowrap absolute">Nenhum episódio selecionado</div>
+        </div>
         <div id="current-podcast" class="text-gray-400 text-xs">Podcast Gramsci</div>
       </div>
     </div>

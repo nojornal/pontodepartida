@@ -226,6 +226,11 @@ async function updateEpisodesWithBlockchainData() {
             console.error(`Erro no episódio ${episode.id}:`, error);
         }
     }
+    
+    // Reaplica a pesquisa se estiver pesquisando
+    if (window.searchSystem && window.searchSystem.reapplySearchIfNeeded) {
+        window.searchSystem.reapplySearchIfNeeded();
+    }
 }
 
 async function updateEpisodesWithRealAudioDurations() {
@@ -245,6 +250,30 @@ async function updateEpisodesWithRealAudioDurations() {
     });
     
     await Promise.allSettled(durationPromises);
+    
+    
+    if (window.searchSystem && window.searchSystem.reapplySearchIfNeeded) {
+        window.searchSystem.reapplySearchIfNeeded();
+    }
+}
+ 
+async function initializeBlockchainWithMusics() {
+    console.log('Inicializando blockchain...');
+    
+    for (let episode of episodesData) {
+        try {
+            await blockchain.addMusicTransaction(episode);
+            console.log(`Música ${episode.id} registrada`);
+        } catch (error) {
+            console.error(`Erro ao registrar música ${episode.id}:`, error);
+        }
+    }
+     
+    await new Promise(resolve => setTimeout(resolve, 7900));
+    await updateEpisodesWithBlockchainData();
+    await updateEpisodesWithRealAudioDurations();
+    
+    console.log('Blockchain inicializado!');
 }
 
 const audioManager = (() => {
@@ -272,41 +301,16 @@ const audioManager = (() => {
     let progressInterval;
     let isDragging = false;
     let isRepeating = false;
-    let isShuffling = false;
-    let playedEpisodes = [];
     let volume = 70;
     let isMuted = false;
-
-    const shuffleArray = (array) => {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    };
-
-    const getRandomEpisode = (excludeId = null) => {
-        const availableEpisodes = episodesData.filter(ep => 
-            !excludeId || ep.id !== excludeId
-        );
-        
-        if (availableEpisodes.length === 0) return episodesData[0];
-        
-        const randomIndex = Math.floor(Math.random() * availableEpisodes.length);
-        return availableEpisodes[randomIndex];
-    };
 
     const getNextEpisode = () => {
         if (!currentEpisode) return episodesData[0];
         
-        if (isShuffling) {
-            return getRandomEpisode(currentEpisode);
-        } else {
-            const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
-            const nextIndex = (currentIndex + 1) % episodesData.length;
-            return episodesData[nextIndex];
-        }
+        // SEMPRE ordem sequencial - shuffle removido
+        const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
+        const nextIndex = (currentIndex + 1) % episodesData.length;
+        return episodesData[nextIndex];
     };
 
     const playNextEpisode = () => {
@@ -317,10 +321,7 @@ const audioManager = (() => {
         
         const nextEpisode = getNextEpisode();
         if (nextEpisode) {
-            console.log(`Indo para: "${nextEpisode.nome}" (${isShuffling ? 'Shuffle' : 'Sequencial'})`);
-            
-            playedEpisodes.push(currentEpisode);
-            if (playedEpisodes.length > 10) playedEpisodes.shift();
+            console.log(`Indo para: "${nextEpisode.nome}" (Sequencial)`);
             
             loadEpisode(nextEpisode);
             play();
@@ -329,23 +330,6 @@ const audioManager = (() => {
                 window.episodeManager.playEpisode(nextEpisode);
             }
         }
-    };
-
-    const toggleShuffle = () => {
-        isShuffling = !isShuffling;
-        const icon = shuffleBtn.querySelector('i');
-        
-        if (isShuffling) {
-            icon.classList.remove('text-gray-400');
-            icon.classList.add('text-green-500');
-            console.log('Modo shuffle ativado');
-        } else {
-            icon.classList.remove('text-green-500');
-            icon.classList.add('text-gray-400');
-            console.log('Modo sequencial ativado');
-        }
-        
-        shuffleBtn.title = isShuffling ? 'Desativar reprodução aleatória' : 'Ativar reprodução aleatória';
     };
 
     const formatTime = (seconds) => {
@@ -509,8 +493,20 @@ const audioManager = (() => {
     };
 
     const setupShuffleControl = () => {
-        shuffleBtn.addEventListener('click', toggleShuffle);
-        shuffleBtn.title = 'Ativar reprodução aleatória';
+        // Shuffle completamente desativado
+        shuffleBtn.style.opacity = '0.5';
+        shuffleBtn.style.cursor = 'not-allowed';
+        shuffleBtn.title = 'Shuffle desativado';
+        
+        const icon = shuffleBtn.querySelector('i');
+        icon.classList.add('text-gray-400');
+        icon.classList.remove('text-green-500');
+        
+        // Não fazer nada quando clicar
+        shuffleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Shuffle desativado');
+        });
     };
     
     const closePlayer = () => {
@@ -632,9 +628,7 @@ const audioManager = (() => {
         togglePlayPause,
         forward,
         backward,
-        nextEpisode,
-        toggleShuffle, 
-        isShuffling: () => isShuffling
+        nextEpisode
     };
 })();
 
@@ -670,11 +664,13 @@ window.episodeManager = {
         });
     }
 };
-
+ 
 function initializeSearchSystem() {
     const searchInput = document.getElementById('search-audio');
     const episodesContainer = document.getElementById('episodes-container');
     let originalEpisodesHTML = '';
+    let isSearching = false; // Flag para controlar se está pesquisando
+    let currentSearchTerm = ''; // Guarda o termo de pesquisa atual
     
     setTimeout(() => {
         originalEpisodesHTML = episodesContainer.innerHTML;
@@ -691,7 +687,10 @@ function initializeSearchSystem() {
             return;
         }
         
-        filteredEpisodes.forEach(episode => {
+        // Mantém a ordem original dos episódios
+        const orderedFilteredEpisodes = filteredEpisodes.sort((a, b) => a.id - b.id);
+        
+        orderedFilteredEpisodes.forEach(episode => {
             const episodeElement = createEpisodeElement(episode);
             episodesContainer.appendChild(episodeElement);
         });
@@ -708,32 +707,34 @@ function initializeSearchSystem() {
         episodeDiv.className = `episode flex items-center gap-4 p-4 rounded-lg hover:bg-gray-800 cursor-pointer transition-colors episode-transition ${episode.bannerGradient ? 'active-banner' : ''}`;
         episodeDiv.dataset.episodeId = episode.id;
         
+        const gradientClasses = episode.imageGradient || 'from-purple-500 to-blue-500';
+        
         episodeDiv.innerHTML = `
-            <div style="position: relative;">
-                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${episode.gradientStart || '#3b82f6'}, ${episode.gradientEnd || '#1d4ed8'}); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-play" style="color: white;"></i>
+            <div class="relative">
+                <div class="w-12 h-12 bg-gradient-to-br ${gradientClasses} rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-play text-white"></i>
                 </div>
             </div>
-            <div style="flex: 1; min-width: 0;">
-                <p style="font-weight: 600; color: #ef4444; margin: 0; word-wrap: break-word; line-height: 1.4;">${episode.nome}</p>
-                <p style="color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; margin: 4px 0;">${episode.descricao}</p>
-                <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
-                    <span style="color: #6b7280; font-size: 12px;">${episode.data}</span>
-                    <span style="color: #6b7280; font-size: 12px;">${formatTime(episode.audioDuration || episode.defaultDuration)}</span>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-red-500 mb-0 break-words leading-tight">${episode.nome}</p>
+                <p class="text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap text-sm mt-1">${episode.descricao}</p>
+                <div class="flex items-center gap-4 mt-1">
+                    <span class="text-gray-500 text-xs">${episode.data}</span>
+                    <span class="text-gray-500 text-xs">${formatTime(episode.audioDuration || episode.defaultDuration)}</span>
                 </div>
             </div>
-            <div style="text-align: right; min-width: 0; flex-shrink: 0;">
-                <div style="color: #10b981; font-size: 12px; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${episode.blockchainHash}">
+            <div class="text-right min-w-0 flex-shrink-0">
+                <div class="text-green-500 text-xs font-mono overflow-hidden text-ellipsis whitespace-nowrap" title="${episode.blockchainHash}">
                     ${episode.blockchainHash ? episode.blockchainHash.substring(0, 16) + '...' : 'Carregando...'}
                 </div>
-                <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">Bloco ${episode.blockIndex}</div>
-                <div style="color: #6b7280; font-size: 12px; margin-top: 2px;">${episode.blockchainDate}</div>
+                <div class="text-gray-500 text-xs mt-0.5">Bloco ${episode.blockIndex}</div>
+                <div class="text-gray-500 text-xs mt-0.5">${episode.blockchainDate}</div>
             </div>
         `;
         
         return episodeDiv;
     }
-    
+
     function filterEpisodes(searchTerm) {
         const filteredEpisodes = episodesData.filter(episode => {
             const episodeTitle = episode.nome.toLowerCase();
@@ -744,15 +745,21 @@ function initializeSearchSystem() {
                    episodeDescription.includes(searchLower);
         });
         
-        renderFilteredEpisodes(filteredEpisodes);
+        // Ordena os episódios filtrados pela ordem original (por ID)
+        const orderedFilteredEpisodes = filteredEpisodes.sort((a, b) => a.id - b.id);
+        
+        renderFilteredEpisodes(orderedFilteredEpisodes);
     }
     
     searchInput.addEventListener('input', function(e) {
         const searchTerm = e.target.value.trim();
+        currentSearchTerm = searchTerm;
         
         if (searchTerm.length > 0) {
+            isSearching = true;
             filterEpisodes(searchTerm);
         } else {
+            isSearching = false;
             episodesContainer.innerHTML = originalEpisodesHTML;
             
             setTimeout(() => {
@@ -765,6 +772,7 @@ function initializeSearchSystem() {
     
     searchInput.addEventListener('search', function() {
         if (this.value === '') {
+            isSearching = false;
             episodesContainer.innerHTML = originalEpisodesHTML;
             setTimeout(() => {
                 if (window.episodeManager && window.episodeManager.setupEpisodeListeners) {
@@ -774,6 +782,12 @@ function initializeSearchSystem() {
         }
     });
     
+    function reapplySearchIfNeeded() {
+        if (isSearching && currentSearchTerm.length > 0) {
+            console.log('Reaplicando pesquisa após atualização...');
+            filterEpisodes(currentSearchTerm);
+        }
+    }
 
     function formatTime(seconds) {
         if (isNaN(seconds)) return "0:00";
@@ -781,6 +795,12 @@ function initializeSearchSystem() {
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
+    
+    // Retorna a função para reaplicar pesquisa
+    return {
+        reapplySearchIfNeeded,
+        isSearching: () => isSearching
+    };
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -796,7 +816,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initializeBlockchainWithMusics();
         console.log('Sistema de áudio carregado com sucesso!');
         console.log('Reprodução sequencial ativada - os episódios tocarão automaticamente em sequência');
-        console.log('Botão shuffle reprodução aleatória');
+        console.log('Shuffle desativado - reprodução apenas em ordem sequencial');
         console.log('Sistema de pesquisa ativado - digite para filtrar episódios');
     } catch (error) {
         console.error('Erro fatal:', error);
