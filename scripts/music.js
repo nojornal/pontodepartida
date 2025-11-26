@@ -256,25 +256,6 @@ async function updateEpisodesWithRealAudioDurations() {
         window.searchSystem.reapplySearchIfNeeded();
     }
 }
- 
-async function initializeBlockchainWithMusics() {
-    console.log('Inicializando blockchain...');
-    
-    for (let episode of episodesData) {
-        try {
-            await blockchain.addMusicTransaction(episode);
-            console.log(`Música ${episode.id} registrada`);
-        } catch (error) {
-            console.error(`Erro ao registrar música ${episode.id}:`, error);
-        }
-    }
-     
-    await new Promise(resolve => setTimeout(resolve, 7900));
-    await updateEpisodesWithBlockchainData();
-    await updateEpisodesWithRealAudioDurations();
-    
-    console.log('Blockchain inicializado!');
-}
 
 const audioManager = (() => {
     const audioElement = document.getElementById('audio-element');
@@ -298,19 +279,96 @@ const audioManager = (() => {
     
     let isPlaying = false;
     let currentEpisode = null;
+    let currentEpisodeIndex = 0;
     let progressInterval;
     let isDragging = false;
     let isRepeating = false;
+    let isShuffling = false;
     let volume = 70;
     let isMuted = false;
+    let originalEpisodeOrder = [...episodesData];
+
+    // Funções auxiliares para shuffle
+    const shuffleEpisodes = () => {
+        // Embaralha o array de episódios usando Fisher-Yates
+        for (let i = episodesData.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [episodesData[i], episodesData[j]] = [episodesData[j], episodesData[i]];
+        }
+        
+        // Atualiza a interface se necessário
+        if (window.searchSystem && !window.searchSystem.isSearching()) {
+            updateEpisodesDisplay();
+        }
+    };
+
+    const restoreOriginalOrder = () => {
+        episodesData = [...originalEpisodeOrder];
+        
+        // Atualiza a interface se necessário
+        if (window.searchSystem && !window.searchSystem.isSearching()) {
+            updateEpisodesDisplay();
+        }
+    };
+
+    const disableRepeat = () => {
+        isRepeating = false;
+        const icon = repeatBtn.querySelector('i');
+        audioElement.loop = false;
+        icon.classList.remove('text-green-500');
+        icon.classList.add('text-gray-400');
+        console.log('Repeat desativado automaticamente');
+    };
+
+    const disableShuffle = () => {
+        isShuffling = false;
+        const icon = shuffleBtn.querySelector('i');
+        icon.classList.remove('text-green-500');
+        icon.classList.add('text-gray-400');
+        shuffleBtn.title = 'Ativar reprodução aleatória';
+        restoreOriginalOrder();
+        console.log('Shuffle desativado automaticamente');
+    };
+
+    // Função para atualizar a exibição dos episódios
+    const updateEpisodesDisplay = () => {
+        if (window.searchSystem && window.searchSystem.reapplySearchIfNeeded) {
+            window.searchSystem.reapplySearchIfNeeded();
+        }
+    };
 
     const getNextEpisode = () => {
         if (!currentEpisode) return episodesData[0];
         
-        // SEMPRE ordem sequencial - shuffle removido
-        const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
-        const nextIndex = (currentIndex + 1) % episodesData.length;
-        return episodesData[nextIndex];
+        if (isShuffling) {
+            // No modo shuffle, pega o próximo episódio na ordem embaralhada
+            const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
+            const nextIndex = (currentIndex + 1) % episodesData.length;
+            return episodesData[nextIndex];
+        } else {
+            // No modo normal, pega o próximo episódio na ordem original
+            const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
+            const currentId = currentEpisodeData.id;
+            const nextId = (currentId % episodesData.length) + 1;
+            return episodesData.find(ep => ep.id === nextId) || episodesData[0];
+        }
+    };
+
+    const getPreviousEpisode = () => {
+        if (!currentEpisode) return episodesData[0];
+        
+        if (isShuffling) {
+            // No modo shuffle, pega o episódio anterior na ordem embaralhada
+            const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
+            const previousIndex = (currentIndex - 1 + episodesData.length) % episodesData.length;
+            return episodesData[previousIndex];
+        } else {
+            // No modo normal, pega o episódio anterior na ordem original
+            const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
+            const currentId = currentEpisodeData.id;
+            const previousId = currentId - 1 > 0 ? currentId - 1 : episodesData.length;
+            return episodesData.find(ep => ep.id === previousId) || episodesData[episodesData.length - 1];
+        }
     };
 
     const playNextEpisode = () => {
@@ -321,13 +379,27 @@ const audioManager = (() => {
         
         const nextEpisode = getNextEpisode();
         if (nextEpisode) {
-            console.log(`Indo para: "${nextEpisode.nome}" (Sequencial)`);
+            console.log(`Indo para próxima: "${nextEpisode.nome}"`);
             
             loadEpisode(nextEpisode);
             play();
             
             if (window.episodeManager) {
                 window.episodeManager.playEpisode(nextEpisode);
+            }
+        }
+    };
+
+    const playPreviousEpisode = () => {
+        const previousEpisode = getPreviousEpisode();
+        if (previousEpisode) {
+            console.log(`Voltando para: "${previousEpisode.nome}"`);
+            
+            loadEpisode(previousEpisode);
+            play();
+            
+            if (window.episodeManager) {
+                window.episodeManager.playEpisode(previousEpisode);
             }
         }
     };
@@ -396,13 +468,10 @@ const audioManager = (() => {
         const setVolume = (newVolume) => {
             volume = Math.max(0, Math.min(100, newVolume));
             audioElement.volume = volume / 100;
-            if (volumeContainer.classList.contains('vertical')) {
-                volumeLevel.style.height = `${volume}%`;
-                volumeLevel.style.width = '100%';
-            } else {
-                volumeLevel.style.width = `${volume}%`;
-                volumeLevel.style.height = '100%';
-            }
+            
+            // Sempre horizontal
+            volumeLevel.style.width = `${volume}%`;
+            volumeLevel.style.height = '100%';
             
             if (volume === 0) {
                 isMuted = true;
@@ -418,62 +487,36 @@ const audioManager = (() => {
             if (isMuted) {
                 audioElement.volume = 0;
                 volumeBtn.querySelector('i').className = 'fa-solid fa-volume-xmark text-lg';
-                if (volumeContainer.classList.contains('vertical')) {
-                    volumeLevel.style.height = '0%';
-                } else {
-                    volumeLevel.style.width = '0%';
-                }
+                volumeLevel.style.width = '0%';
             } else {
                 audioElement.volume = volume / 100;
                 volumeBtn.querySelector('i').className = 'fa-solid fa-volume-high text-lg';
-                if (volumeContainer.classList.contains('vertical')) {
-                    volumeLevel.style.height = `${volume}%`;
-                } else {
-                    volumeLevel.style.width = `${volume}%`;
-                }
+                volumeLevel.style.width = `${volume}%`;
             }
         };
         
         const handleVolumeClick = (e) => {
             const rect = volumeContainer.getBoundingClientRect();
             
-            if (volumeContainer.classList.contains('vertical')) {
-                
-                const clickY = rect.bottom - e.clientY; 
-                const newVolume = (clickY / rect.height) * 100;
-                setVolume(newVolume);
-            } else {
-                
-                const clickX = e.clientX - rect.left;
-                const newVolume = (clickX / rect.width) * 100;
-                setVolume(newVolume);
-            }
+            // Sempre horizontal
+            const clickX = e.clientX - rect.left;
+            const newVolume = (clickX / rect.width) * 100;
+            setVolume(newVolume);
         };
         
         volumeBtn.addEventListener('click', toggleMute);
         volumeContainer.addEventListener('click', handleVolumeClick);
-        
-         const updateVolumeOrientation = () => {
-            const isVertical = window.innerWidth < 768; // Mobile
-            if (isVertical) {
-                volumeContainer.classList.add('vertical');
-                volumeLevel.style.height = `${volume}%`;
-                volumeLevel.style.width = '100%';
-            } else {
-                volumeContainer.classList.remove('vertical');
-                volumeLevel.style.width = `${volume}%`;
-                volumeLevel.style.height = '100%';
-            }
-        };
-        
-         updateVolumeOrientation();
-        window.addEventListener('resize', updateVolumeOrientation);
         
         setVolume(volume);
     };
     
     const setupRepeatControl = () => {
         const toggleRepeat = () => {
+            // Se shuffle estiver ativo, desativa primeiro
+            if (isShuffling) {
+                disableShuffle();
+            }
+            
             isRepeating = !isRepeating;
             const icon = repeatBtn.querySelector('i');
             audioElement.loop = isRepeating;
@@ -493,20 +536,34 @@ const audioManager = (() => {
     };
 
     const setupShuffleControl = () => {
-        // Shuffle completamente desativado
-        shuffleBtn.style.opacity = '0.5';
-        shuffleBtn.style.cursor = 'not-allowed';
-        shuffleBtn.title = 'Shuffle desativado';
+        const toggleShuffle = () => {
+            // Se repeat estiver ativo, desativa primeiro
+            if (isRepeating) {
+                disableRepeat();
+            }
+            
+            isShuffling = !isShuffling;
+            const icon = shuffleBtn.querySelector('i');
+            
+            if (isShuffling) {
+                // Salva a ordem original e embaralha
+                originalEpisodeOrder = [...episodesData];
+                shuffleEpisodes();
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-green-500');
+                shuffleBtn.title = 'Desativar reprodução aleatória';
+                console.log('Modo shuffle ativado');
+            } else {
+                // Restaura a ordem original
+                restoreOriginalOrder();
+                icon.classList.remove('text-green-500');
+                icon.classList.add('text-gray-400');
+                shuffleBtn.title = 'Ativar reprodução aleatória';
+                console.log('Modo shuffle desativado');
+            }
+        };
         
-        const icon = shuffleBtn.querySelector('i');
-        icon.classList.add('text-gray-400');
-        icon.classList.remove('text-green-500');
-        
-        // Não fazer nada quando clicar
-        shuffleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Shuffle desativado');
-        });
+        shuffleBtn.addEventListener('click', toggleShuffle);
     };
     
     const closePlayer = () => {
@@ -530,10 +587,10 @@ const audioManager = (() => {
             console.log(`Carregando: ${episodeData.nome}`);
             audioElement.src = episodeData.audio;
             
-            // Atualiza as informações do player incluindo o autor
             updatePlayerInfo(episodeData);
             
             currentEpisode = episodeData.id;
+            currentEpisodeIndex = episodesData.findIndex(ep => ep.id === episodeData.id);
             player.classList.remove('hidden');
             
             audioElement.addEventListener('loadedmetadata', setDuration, { once: true });
@@ -580,27 +637,15 @@ const audioManager = (() => {
         isPlaying ? pause() : play();
     };
     
-    const forward = () => {
-        if (audioElement.duration) {
-            audioElement.currentTime = Math.min(audioElement.currentTime + 15, audioElement.duration);
-            updateProgress();
-        }
-    };
-    
-    const backward = () => {
-        audioElement.currentTime = Math.max(audioElement.currentTime - 15, 0);
-        updateProgress();
-    };
-
-    const nextEpisode = () => {
-        playNextEpisode();
-    };
-    
     const init = () => {
         playerPlayBtn.addEventListener('click', togglePlayPause);
         closePlayerBtn.addEventListener('click', closePlayer);
-        backwardBtn.addEventListener('click', backward);
-        forwardBtn.addEventListener('click', forward);
+        
+        // CORREÇÃO: backward-btn vai para música ANTERIOR
+        backwardBtn.addEventListener('click', playPreviousEpisode);
+        
+        // CORREÇÃO: forward-btn vai para PRÓXIMA música
+        forwardBtn.addEventListener('click', playNextEpisode);
         
         setupProgressBar();
         setupVolumeControls();
@@ -613,11 +658,6 @@ const audioManager = (() => {
             console.log('Episódio terminado, iniciando próximo...');
             playNextEpisode();
         });
-
-        const nextEpisodeBtn = document.getElementById('forward-btn');
-        if (nextEpisodeBtn) {
-            nextEpisodeBtn.addEventListener('click', nextEpisode);
-        }
     };
 
     return { 
@@ -626,9 +666,8 @@ const audioManager = (() => {
         play, 
         pause, 
         togglePlayPause,
-        forward,
-        backward,
-        nextEpisode
+        playNextEpisode,
+        playPreviousEpisode
     };
 })();
 
@@ -650,7 +689,6 @@ window.episodeManager = {
         });
     },
     
-    // Configurar listeners dos episódios
     setupEpisodeListeners: function() {
         const episodeElements = document.querySelectorAll('.episode');
         episodeElements.forEach(episode => {
@@ -664,13 +702,13 @@ window.episodeManager = {
         });
     }
 };
- 
+
 function initializeSearchSystem() {
     const searchInput = document.getElementById('search-audio');
     const episodesContainer = document.getElementById('episodes-container');
     let originalEpisodesHTML = '';
-    let isSearching = false; // Flag para controlar se está pesquisando
-    let currentSearchTerm = ''; // Guarda o termo de pesquisa atual
+    let isSearching = false;
+    let currentSearchTerm = '';
     
     setTimeout(() => {
         originalEpisodesHTML = episodesContainer.innerHTML;
@@ -687,7 +725,6 @@ function initializeSearchSystem() {
             return;
         }
         
-        // Mantém a ordem original dos episódios
         const orderedFilteredEpisodes = filteredEpisodes.sort((a, b) => a.id - b.id);
         
         orderedFilteredEpisodes.forEach(episode => {
@@ -745,9 +782,7 @@ function initializeSearchSystem() {
                    episodeDescription.includes(searchLower);
         });
         
-        // Ordena os episódios filtrados pela ordem original (por ID)
         const orderedFilteredEpisodes = filteredEpisodes.sort((a, b) => a.id - b.id);
-        
         renderFilteredEpisodes(orderedFilteredEpisodes);
     }
     
@@ -796,7 +831,6 @@ function initializeSearchSystem() {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
     
-    // Retorna a função para reaplicar pesquisa
     return {
         reapplySearchIfNeeded,
         isSearching: () => isSearching
@@ -815,9 +849,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initializeBlockchainWithMusics();
         console.log('Sistema de áudio carregado com sucesso!');
-        console.log('Reprodução sequencial ativada - os episódios tocarão automaticamente em sequência');
-        console.log('Shuffle desativado - reprodução apenas em ordem sequencial');
-        console.log('Sistema de pesquisa ativado - digite para filtrar episódios');
+        console.log('Navegação entre músicas configurada:');
+        console.log('⏮️ Backward: Música anterior');
+        console.log('⏭️ Forward: Próxima música');
+        console.log('Reprodução automática em sequência ativada');
     } catch (error) {
         console.error('Erro fatal:', error);
     }
