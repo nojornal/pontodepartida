@@ -14,15 +14,14 @@ const episodeManager = (() => {
     let bannerTimeout;
     
     const initializeEpisodeOrder = () => {
-        // MODIFICAÇÃO: Se tiver apenas 1 episódio, mostra apenas 1
         if (episodesData.length === 1) {
-            currentEpisodes = [...episodesData]; // Apenas o episódio único
+            currentEpisodes = [...episodesData]; 
             console.log('Apenas 1 episódio disponível:', currentEpisodes.map(ep => ep.id));
         } else {
-            currentEpisodes = [...episodesData].slice(0, 3); // Primeiros 3 episódios
+            currentEpisodes = [...episodesData].slice(0, 3); 
             console.log('Ordem FIXA inicializada:', currentEpisodes.map(ep => ep.id));
         }
-        currentBannerEpisode = getRandomBannerEpisode(); // Banner continua aleatório
+        currentBannerEpisode = getRandomBannerEpisode();
     };
     
     const getRandomBannerEpisode = (excludeIds = []) => {
@@ -42,7 +41,6 @@ const episodeManager = (() => {
         const container = document.getElementById('episodes-container');
         container.innerHTML = '';
         
-        // MODIFICAÇÃO: Só preenche até 3 episódios se houver mais de 1
         if (episodesData.length > 1) {
             while (currentEpisodes.length < 3) {
                 const lastEpisode = currentEpisodes[currentEpisodes.length - 1];
@@ -52,7 +50,6 @@ const episodeManager = (() => {
             }
         }
         
-        // MODIFICAÇÃO: Renderiza apenas a quantidade necessária
         const episodesToRender = episodesData.length === 1 ? 1 : 3;
         
         for (let i = 0; i < episodesToRender; i++) {
@@ -112,7 +109,6 @@ const episodeManager = (() => {
     };
     
     const rotateEpisodes = () => {
-        // MODIFICAÇÃO: Só rotaciona se houver mais de 1 episódio
         if (episodesData.length <= 1) return;
         
         const removedEpisode = currentEpisodes.shift();
@@ -127,7 +123,6 @@ const episodeManager = (() => {
     };
     
     const rotateToEpisode = (targetEpisodeId) => {
-        // MODIFICAÇÃO: Só rotaciona se houver mais de 1 episódio
         if (episodesData.length <= 1) return;
         
         const targetEpisode = episodesData.find(ep => ep.id === targetEpisodeId);
@@ -136,7 +131,6 @@ const episodeManager = (() => {
         const currentPosition = currentEpisodes.findIndex(ep => ep.id === targetEpisodeId);
         
         if (currentPosition === -1) {
-            // ALTERAÇÃO: Substituir o último episódio mantendo a ordem
             currentEpisodes[2] = targetEpisode;
             console.log(`Episódio ${targetEpisode.nome} adicionado ao carrossel`);
         } else if (currentPosition > 0) {
@@ -155,7 +149,6 @@ const episodeManager = (() => {
         
         episodes.forEach(episode => {
             episode.addEventListener('click', (e) => {
-                // MODIFICAÇÃO: Só permite clique para rotacionar se houver mais de 1 episódio
                 if (episodesData.length <= 1) return;
                 
                 if (!e.target.closest('.play-btn')) {
@@ -178,7 +171,6 @@ const episodeManager = (() => {
                 const episodeId = parseInt(button.getAttribute('data-episode-id'));
                 const episodeData = episodesData.find(ep => ep.id === episodeId);
                 
-                // MODIFICAÇÃO: Só rotaciona se houver mais de 1 episódio
                 if (episodesData.length > 1) {
                     const position = parseInt(episodeElement.dataset.position);
                     
@@ -235,7 +227,6 @@ const episodeManager = (() => {
     };
     
     const nextBanner = () => {
-        // MODIFICAÇÃO: Só muda banner se houver mais de 1 episódio
         if (episodesData.length <= 1) return;
         
         const currentEpisodeId = currentBannerEpisode ? currentBannerEpisode.id : episodesData[0].id;
@@ -245,7 +236,6 @@ const episodeManager = (() => {
     };
     
     const prevBanner = () => {
-        // MODIFICAÇÃO: Só muda banner se houver mais de 1 episódio
         if (episodesData.length <= 1) return;
         
         const currentEpisodeId = currentBannerEpisode ? currentBannerEpisode.id : episodesData[0].id;
@@ -270,7 +260,6 @@ const episodeManager = (() => {
     };
     
     const updateNavigationHints = () => {
-        // MODIFICAÇÃO: Esconde as dicas de navegação se houver apenas 1 episódio
         if (episodesData.length <= 1) {
             hintLeft.style.opacity = '0';
             hintRight.style.opacity = '0';
@@ -282,7 +271,6 @@ const episodeManager = (() => {
     
     const setupBannerNavigation = () => {
         bannerArea.addEventListener('mousemove', (e) => {
-            // MODIFICAÇÃO: Só permite navegação se houver mais de 1 episódio
             if (episodesData.length <= 1) return;
             
             const bannerRect = bannerArea.getBoundingClientRect();
@@ -302,7 +290,6 @@ const episodeManager = (() => {
         });
         
         bannerArea.addEventListener('click', (e) => {
-            // MODIFICAÇÃO: Só permite clique se houver mais de 1 episódio
             if (episodesData.length <= 1) return;
             
             if (!e.target.closest('button')) {
@@ -315,8 +302,6 @@ const episodeManager = (() => {
         mainPlayBtn.addEventListener('click', () => {
             if (currentBannerEpisode && window.audioManager) {
                 playEpisode(currentBannerEpisode);
-                
-                // MODIFICAÇÃO: Só adiciona ao carrossel se houver mais de 1 episódio
                 if (episodesData.length > 1) {
                     const isInCarousel = currentEpisodes.some(ep => ep.id === currentBannerEpisode.id);
                     if (!isInCarousel) {
@@ -336,7 +321,6 @@ const episodeManager = (() => {
     };
     
     const startAutoRotation = () => {
-        // MODIFICAÇÃO: Só inicia auto-rotação se houver mais de 1 episódio
         if (episodesData.length <= 1) return;
         
         bannerTimeout = setTimeout(() => {
