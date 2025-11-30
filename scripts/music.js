@@ -134,7 +134,7 @@ let episodesData = [
         id: 1,
         nome: "1. Renascer na Comunidade",
         autor: "Thais Arcanjo,Sarah Massaroli,Luã Gonzaga ",
-        data: "12 Nov 2025",
+        data: "30 Nov 2025",
         descricao: "Este episódio desmistifica as comunidades terapêuticas. Com depoimentos reais, mostramos como a rotina disciplinada e o apoio emocional criam um ambiente de acolhimento para uma segunda chance e transformação",
         audio: "audios/audiooriginal.mp3",
         imageGradient: "from-purple-500 to-blue-500",
@@ -288,15 +288,15 @@ const audioManager = (() => {
     let isMuted = false;
     let originalEpisodeOrder = [...episodesData];
 
-    // Funções auxiliares para shuffle
+
     const shuffleEpisodes = () => {
-        // Embaralha o array de episódios usando Fisher-Yates
+   
         for (let i = episodesData.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [episodesData[i], episodesData[j]] = [episodesData[j], episodesData[i]];
         }
         
-        // Atualiza a interface se necessário
+    
         if (window.searchSystem && !window.searchSystem.isSearching()) {
             updateEpisodesDisplay();
         }
@@ -305,7 +305,7 @@ const audioManager = (() => {
     const restoreOriginalOrder = () => {
         episodesData = [...originalEpisodeOrder];
         
-        // Atualiza a interface se necessário
+
         if (window.searchSystem && !window.searchSystem.isSearching()) {
             updateEpisodesDisplay();
         }
@@ -330,7 +330,7 @@ const audioManager = (() => {
         console.log('Shuffle desativado automaticamente');
     };
 
-    // Função para atualizar a exibição dos episódios
+   
     const updateEpisodesDisplay = () => {
         if (window.searchSystem && window.searchSystem.reapplySearchIfNeeded) {
             window.searchSystem.reapplySearchIfNeeded();
@@ -341,12 +341,12 @@ const audioManager = (() => {
         if (!currentEpisode) return episodesData[0];
         
         if (isShuffling) {
-            // No modo shuffle, pega o próximo episódio na ordem embaralhada
+            
             const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
             const nextIndex = (currentIndex + 1) % episodesData.length;
             return episodesData[nextIndex];
         } else {
-            // No modo normal, pega o próximo episódio na ordem original
+            
             const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
             const currentId = currentEpisodeData.id;
             const nextId = (currentId % episodesData.length) + 1;
@@ -358,12 +358,12 @@ const audioManager = (() => {
         if (!currentEpisode) return episodesData[0];
         
         if (isShuffling) {
-            // No modo shuffle, pega o episódio anterior na ordem embaralhada
+            
             const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
             const previousIndex = (currentIndex - 1 + episodesData.length) % episodesData.length;
             return episodesData[previousIndex];
         } else {
-            // No modo normal, pega o episódio anterior na ordem original
+           
             const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
             const currentId = currentEpisodeData.id;
             const previousId = currentId - 1 > 0 ? currentId - 1 : episodesData.length;
