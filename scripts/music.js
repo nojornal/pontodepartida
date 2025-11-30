@@ -128,59 +128,59 @@ const generateRandomDuration = () => {
     return Math.floor(Math.random() * (360 - 180) + 180);
 };
 
-// Dados dos episódios
+// Dados
 let episodesData = [
     {
         id: 1,
-        nome: "1. A Hegemonia",
-        autor: "Carlos Silva",
+        nome: "1. Devonshire Waltz...",
+        autor: "Kevin MacLeod",
         data: "12 Nov 2025",
-        descricao: "Descrição do episódio",
-        audio: "audios/a1.mp3",
+        descricao: "This is more for practicing dance than anything else. There are occasional bits with wind instruments to break it up a bit. Available in three tempos: 84, 93, and 104.",
+        audio: "audios/Avant_Jazz.mp3",
         imageGradient: "from-purple-500 to-blue-500",
         bannerGradient: "gradient-1",
         defaultDuration: 300
     },
     {
         id: 2,
-        nome: "2. Gramsci para co", 
-        autor: "Maria Santos",
+        nome: "2. Valse Gymnopedie", 
+        autor: "Kevin MacLeod",
         data: "5 Nov 2025",
-        descricao: "Como as ideias",
-        audio: "audios/a1.mp3",
+        descricao: "This is Gymnopedie #1 from Erik Satie (1888), but it has a beat and you can dance to it.",
+        audio: "audios/Valse_Gymnopedie.mp3",
         imageGradient: "from-pink-500 to-purple-500",
         bannerGradient: "gradient-2",
         defaultDuration: 270
     },
     {
         id: 3,
-        nome: "3. O Conceito",
-        autor: "João Pereira",
+        nome: "3. Pleasant Porridge",
+        autor: "Kevin MacLeod",
         data: "29 Out 2025",
-        descricao: "Análise do conceito de.",
-        audio: "audios/a1.mp3",
+        descricao: "The show will begin shortly.",
+        audio: "audios/Pleasant_Porridge.mp3",
         imageGradient: "from-green-500 to-blue-500",
         bannerGradient: "gradient-3",
         defaultDuration: 288
     },
     {
         id: 4,
-        nome: "4. Intelectuais Orgânicos",
-        autor: "Ana Costa",
+        nome: "4. Night in Venice",
+        autor: "Kevin MacLeod",
         data: "22 Out 2025",
-        descricao: "O papel dos intelectuais orgânicos na transformação social.",
-        audio: "audios/a1.mp3",
+        descricao: "Just your run of the mill nice jazz; processed to sound a lot older than it is.",
+        audio: "audios/Night_in_Venice.mp3",
         imageGradient: "from-yellow-500 to-red-500",
         bannerGradient: "gradient-4",
         defaultDuration: 312
     },
     {
         id: 5,
-        nome: "5. Bloco Histórico",
-        autor: "Pedro Almeida",
+        nome: "5. Plain Loafer",
+        autor: "Kevin MacLeod",
         data: "15 Out 2025",
-        descricao: "Compreendendo o conceito de bloco histórico em Gramsci.",
-        audio: "audios/a1.mp3",
+        descricao: "Sort of rock, but not. Neither is this jazz or funk... I really don't know what this is... but it is kind of fun.",
+        audio: "audios/Plain_Loafer.mp3",
         imageGradient: "from-blue-500 to-purple-500",
         bannerGradient: "gradient-5",
         defaultDuration: 282
