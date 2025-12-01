@@ -427,7 +427,7 @@ const audioManager = (() => {
             if (currentEpisodeData && currentEpisodeData.actualDuration) {
                 duration.textContent = formatTime(currentEpisodeData.actualDuration);
             } else {
-                duration.textContent = "5:00";
+                duration.textContent = "14:29";
             }
         }
     };
